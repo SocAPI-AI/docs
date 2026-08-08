@@ -36,7 +36,7 @@ Fields:
 | `platform` | top-level | yes | Platform slug (`instagram`, `facebook`, `threads`, `tiktok`, `linkedin`, `twitter`, `youtube`, `google`). |
 | `redirect_uri` | top-level | recommended | Your post-connection callback. If you have registered any redirect URIs, this must match one of them (see [Whitelisting redirect URIs](#whitelisting-redirect-uris)). If omitted, the user sees a built-in HTML success page instead of being redirected. |
 | `state` | top-level | optional | Opaque correlation value, max 512 chars, echoed back verbatim in the final redirect. Use it to tie the result to a session on your side. |
-| `brand_id` | top-level | optional | Attach the account to an existing brand. If omitted, a new brand is auto-created. |
+| `brand_id` | top-level | optional | Attach the account to an existing brand. If omitted, your unused "Default" brand is reused when available; otherwise a new brand is auto-created. |
 | `metadata` | top-level | optional | Platform-specific connection data only (for example, TikTok BYOK uses this for `apikey`). For standard managed OAuth this is empty or omitted. |
 
 Response (HTTP 202):
