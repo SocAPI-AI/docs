@@ -113,6 +113,14 @@ Read conversations and send messages across platforms that support DMs.
 | Threads | No | Not available via API |
 | YouTube | No | Not available via API |
 
+### When the messaging window is closed
+
+Instagram and Facebook only let you message someone inside a window that their last message to you opened. Once it closes, a send returns HTTP `400` with `platform.instagram.window_closed` or `platform.facebook.window_closed`.
+
+After the platform refuses a thread for this reason, SocialAPI remembers it and answers further sends on that thread itself, with the same status and code plus `"blocked_locally": true` in the error meta. Nothing is sent to the platform, so the call returns immediately and does not count against your platform rate limits. The block lifts as soon as the person messages you again, on the webhook or the next message sync, and in any case after 24 hours, so a webhook that never arrives cannot leave a thread permanently unreachable.
+
+A send that carries a `message_tag` is never blocked this way, since tags are how a message legitimately reaches someone outside the standard window.
+
 ### Sending text and attachments
 
 A message can carry text, an attachment, or both. Provide `text`, `attachment_url`, or both: at least one is required.
