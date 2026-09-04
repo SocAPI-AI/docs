@@ -3470,7 +3470,7 @@
                         }
                     },
                     "400": {
-                        "description": "Invalid request body, missing required fields, or messaging window closed (Instagram code platform.instagram.window_closed: the recipient must message you first to reopen the 24-hour window)",
+                        "description": "Invalid request body, missing required fields, or messaging window closed (platform.instagram.window_closed / platform.facebook.window_closed: the recipient must message you first to reopen the 24-hour window). After the platform refuses a thread for a closed window, later untagged sends on it are refused here with the same code and blocked_locally in the meta, until an inbound message reopens it or 24 hours pass; no credit is charged for those.",
                         "content": {
                             "application/json": {
                                 "schema": {
