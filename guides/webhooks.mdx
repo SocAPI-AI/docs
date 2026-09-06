@@ -57,7 +57,7 @@ Events are grouped into three categories: **inbox** (incoming interactions), **p
 | `dm.received` | inbox | A new direct message arrives (may include `metadata.referral` if the DM originated from an ad) |
 | `dm.sent` | inbox | Your account sent a direct message (echo confirmation from Meta). Fires for every echo the platform delivers, including replies sent from the native app or Meta Business Suite, not only messages sent through the API. On Facebook the echo's `raw_payload` carries `app_id`, which lets you tell the two apart |
 | `dm.referral` | inbox | A user clicked an ad or referral link without sending a message. The interaction has empty content and includes `metadata.referral` |
-| `dm.postback` | inbox | A user tapped a button or quick reply in a DM |
+| `dm.postback` | inbox | A user tapped a button in a DM (Instagram and Facebook). `metadata.title` is the label they tapped and `metadata.payload` is the value you attached to the button, which is the more reliable one to branch on. Both platforms show the tap as the user's own message bubble in the thread, so it is also stored as an incoming message and appears in `GET /v1/inbox/conversations/{id}/messages` |
 | `review.received` | inbox | A new review arrives (Google Business Profile) |
 | `mention.received` | inbox | Your account is @mentioned in a comment or a post caption (`metadata.mention_type` is `comment` or `caption`). Instagram story mentions are delivered as `dm.received` with an attachment of type `story_mention`, not as this event |
 | `dm.status.sent` | inbox | A direct message you sent was accepted by the platform (Instagram, Facebook, WhatsApp) |
