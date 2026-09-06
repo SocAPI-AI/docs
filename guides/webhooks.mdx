@@ -234,6 +234,14 @@ Every webhook POST has a JSON body with an `event` field and a `data` field cont
 
 The `data` object is the same `Interaction` shape returned by `GET /accounts/{id}/comments` (and the equivalent DM, review, and mention endpoints). The `id` field is a stable SocialAPI interaction ID - see [Interaction IDs](/guides/interaction-ids).
 
+### Matching a DM event to a stored message
+
+`dm.received`, `dm.sent` and `dm.postback` carry a `platform_id` field on `data`: the platform's own message ID, byte-identical to the `platform_id` of the matching row from `GET /v1/inbox/conversations/{id}/messages`. Join on that field when you need to line a delivered event up against the stored conversation.
+
+Do not try to match on `id`. The `id` on a webhook is a SocialAPI interaction ID, while the `id` returned by the messages endpoint is that message's own record ID, so the two are different values by design and will never be equal. `platform_id` is the field the two sides share.
+
+`dm.referral` has no `platform_id`, because a referral with no message attached has no platform message ID to report.
+
 For platform-originated events, the body also includes a top-level `raw_payload` field alongside `data`: the verbatim per-event webhook fragment as the platform sent it to us. Use it when you need a platform detail the normalized `data` object does not carry (for example, `app_id` on Facebook message echoes to distinguish API-sent messages from replies typed in the Page inbox). The shape of `raw_payload` is defined by the platform and can change with platform API versions, so prefer `data` whenever it has what you need.
 
 The `dm.status.*` events use a smaller payload instead of the full interaction object: `data` contains `status`, `mids` (the platform message IDs the receipt covers), and `recipient_id`.

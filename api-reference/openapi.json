@@ -16280,6 +16280,11 @@
                         "type": "string",
                         "example": "instagram"
                     },
+                    "platform_id": {
+                        "description": "[optional] Platform-native message id, byte-identical to the platform_id of the matching row from GET /v1/inbox/conversations/{id}/messages. Set on Instagram and Facebook dm.received, dm.sent and dm.postback so a delivered event can be joined to a stored message: ID is a SocialAPI interaction id and the messages endpoint returns an internal row UUID, so without this the two carry no field in common. Empty for dm.referral, which has no platform message id.",
+                        "type": "string",
+                        "example": "m_AbCdEf123"
+                    },
                     "platform_post_id": {
                         "description": "[optional] Platform-native post ID; empty when not available",
                         "type": "string",
