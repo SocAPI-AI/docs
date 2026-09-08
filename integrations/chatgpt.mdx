@@ -10,20 +10,20 @@ description: Connect SocialAPI.AI to ChatGPT on web, desktop, and mobile.
 ### Prerequisites
 
 - A [SocialAPI.AI](https://social-api.ai) account with at least one connected social account
-- Any ChatGPT plan (Apps are supported on all plans, including Free, Plus, Pro, Business, Enterprise, and Education)
+- A ChatGPT Plus, Pro, Business, Enterprise, or Education account. Developer Mode is not available on the Free plan.
+- A desktop browser at [chatgpt.com](https://chatgpt.com). Connectors can only be created on the web, not from the mobile or desktop apps (see [Mobile](#mobile-ios--android) below for using them afterwards).
 
 ### 1. Enable Developer Mode
 
-Go to **Settings → Apps & Connectors → Advanced settings** and toggle **Developer Mode** on.
+Go to **Settings → Security and login** and toggle **Developer mode** on.
 
-<img
-  src="/images/mcp-chatgpt-settings.png"
-  alt="ChatGPT Apps & Connectors advanced settings"
-/>
+<Warning>
+  OpenAI moved this toggle in July 2026. It used to live under **Settings → Apps & Connectors → Advanced settings**, and older guides (including earlier versions of this page) still point there. If you cannot find it, look under **Security and login**.
+</Warning>
 
 ### 2. Create a connector
 
-Go to **Settings → Connectors → Create** and fill in:
+Go to **Settings → Connectors** and click **Create**. The **Create** button only appears once Developer Mode is on, so enable it first. Fill in:
 
 - **Name:** `SocialAPI.AI`
 - **Description:** `Manage social media accounts, posts, comments, DMs, reviews, and mentions`
