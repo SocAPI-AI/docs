@@ -2917,7 +2917,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Sends a direct message to the author of a comment. Only supported on Instagram and Facebook. Meta allows one private reply per comment, within 7 days of the comment; a second attempt or an expired window returns HTTP 400 with error code platform.instagram.private_reply_ineligible or platform.facebook.private_reply_ineligible. On Facebook the commenter's reply continues as a normal Messenger conversation; on Instagram the private reply does not open a standard 24-hour messaging window. Check the can_private_reply capability flag.",
+                "description": "Sends a direct message to the author of a comment. Only supported on Instagram and Facebook. Meta allows one private reply per comment, within 7 days of the comment; a second attempt or an expired window returns HTTP 400 with error code platform.instagram.private_reply_ineligible or platform.facebook.private_reply_ineligible. Once a comment has spent its one reply, or when we can already tell the comment is older than 7 days, further attempts are refused immediately without calling the platform and do not count against your outbound message rate; the error carries a reason of already_replied, platform_refused or window_expired. The 400 is terminal: retrying it will never succeed. On Facebook the commenter's reply continues as a normal Messenger conversation; on Instagram the private reply does not open a standard 24-hour messaging window. Check the can_private_reply capability flag.",
                 "tags": [
                     "Inbox Comments"
                 ],
@@ -3470,7 +3470,7 @@
                         }
                     },
                     "400": {
-                        "description": "Invalid request body, missing required fields, or messaging window closed (Instagram code platform.instagram.window_closed: the recipient must message you first to reopen the 24-hour window)",
+                        "description": "Invalid request body, missing required fields, or messaging window closed (platform.instagram.window_closed / platform.facebook.window_closed: the recipient must message you first to reopen the 24-hour window). After the platform refuses a thread for a closed window, later untagged sends on it are refused here with the same code and blocked_locally in the meta, until an inbound message reopens it or 24 hours pass; no credit is charged for those.",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -5464,7 +5464,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Assigns one unassigned Page from this login to the given brand. Each Page belongs to exactly one brand. Each brand can connect up to 5 Facebook Pages, a hard cap. Assigning beyond that limit is refused.",
+                "description": "Assigns one Page from this login to the given brand. Each Page belongs to exactly one brand, so a Page currently held by another brand of yours is moved to the target brand. Each brand can connect up to 5 Facebook Pages, a hard cap. Assigning beyond that limit is refused.",
                 "tags": [
                     "Facebook"
                 ],
@@ -9178,7 +9178,7 @@
                         }
                     },
                     "429": {
-                        "description": "Monthly post limit exceeded",
+                        "description": "Monthly post limit exceeded, or the target account is over its posting velocity cap (publishing.velocity_limit; see the Retry-After header)",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -9596,7 +9596,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Fetches live engagement metrics from platform APIs for a published post. Accepts the SocialAPI post ID or a platform post ID.",
+                "description": "Fetches engagement metrics from platform APIs for a published post. Accepts the SocialAPI post ID or a platform post ID.",
                 "tags": [
                     "Posts"
                 ],
@@ -9741,7 +9741,7 @@
                         }
                     },
                     "429": {
-                        "description": "Monthly post limit exceeded",
+                        "description": "Monthly post limit exceeded, or the target account is over its posting velocity cap (publishing.velocity_limit; see the Retry-After header)",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -9828,7 +9828,7 @@
                         }
                     },
                     "429": {
-                        "description": "Monthly post limit exceeded",
+                        "description": "Monthly post limit exceeded, or the target account is over its posting velocity cap (publishing.velocity_limit; see the Retry-After header)",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -16279,6 +16279,11 @@
                         "description": "[always]",
                         "type": "string",
                         "example": "instagram"
+                    },
+                    "platform_id": {
+                        "description": "[optional] Platform-native message id, byte-identical to the platform_id of the matching row from GET /v1/inbox/conversations/{id}/messages. Set on Instagram and Facebook dm.received, dm.sent and dm.postback so a delivered event can be joined to a stored message: ID is a SocialAPI interaction id and the messages endpoint returns an internal row UUID, so without this the two carry no field in common. Empty for dm.referral, which has no platform message id.",
+                        "type": "string",
+                        "example": "m_AbCdEf123"
                     },
                     "platform_post_id": {
                         "description": "[optional] Platform-native post ID; empty when not available",
