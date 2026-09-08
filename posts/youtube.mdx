@@ -13,7 +13,7 @@ YouTube publishing uploads a single video through the YouTube Data API v3 resuma
 | Auth type | OAuth 2.0 (Google) |
 | API | YouTube Data API v3 |
 | Create post | Yes |
-| Update post | Yes (title, description, tags, privacy, category, status flags) |
+| Update post | Yes (title, description, tags, privacy, category, status flags). Published videos edit through `PATCH /v1/platforms/youtube/accounts/{id}/videos/{videoId}` |
 | Delete post | Yes |
 | Schedule | Native (via `publish_at` + `private` visibility) |
 | First comment | Yes (best-effort, non-blocking) |
@@ -25,7 +25,7 @@ YouTube publishing uploads a single video through the YouTube Data API v3 resuma
 
 | Content type | How to trigger | Notes |
 |---|---|---|
-| Single video | One `media_ids` entry | The only supported format. MP4 recommended. |
+| Single video | One `media` entry | The only supported format. MP4 recommended. |
 
 YouTube publishing takes exactly one video. Image posts and carousels are not supported: images surface only as thumbnails when you retrieve posts. Accepted media is `video/*`, uploaded via the resumable protocol, up to 256 GB.
 
@@ -34,7 +34,7 @@ YouTube publishing takes exactly one video. Image posts and carousels are not su
 **Description limit:** 5000 bytes (maps from the `text` field).
 
 <Warning>
-  Attach the video by **uploading it first and passing the returned `media_id`** in the `media_ids` array. There is no `video_url` or `media_url` field. Upload in one step with `POST /v1/media/upload` (multipart), or use the presigned-URL flow (`GET /v1/media/upload-url` → `PUT` the file → `POST /v1/media/:id/verify`). The `verify` step is required: without it the media stays `pending` and publishing fails.
+  Attach the video through the `media` array, as either a `media_id` source (a file uploaded to SocialAPI) or a `url` source (a public `http(s)` URL we fetch at publish time). There is no separate `video_url` or `media_url` field. To upload first, use `POST /v1/media/upload` (multipart) or the presigned-URL flow (`GET /v1/media/upload-url` → `PUT` the file → `POST /v1/media/:id/verify`); the `verify` step is required, without it the media stays `pending` and publishing fails. YouTube does not support `platform_attachment_id`.
 </Warning>
 
 ---
@@ -45,7 +45,7 @@ Use `POST /v1/posts` with `targets` targeting a YouTube account.
 
 - `text` becomes the video description.
 - The title comes from the top-level `title` field, or from `platform_data.youtube.title` as a fallback. The top-level value wins when both are present.
-- `visibility` maps to the video's privacy status. It defaults to `private` when omitted. `public` and `unlisted` both work normally.
+- `visibility` maps to the video's privacy status. It defaults to `public` when omitted, so a published video is viewable right away. Pass `private` or `unlisted` explicitly if you do not want that. The one exception is `publish_at` (see [Native scheduling](#native-scheduling)), which defaults `visibility` to `private` because YouTube only schedules private videos.
 
 ```bash
 curl -X POST https://api.social-api.ai/v1/posts \
@@ -56,7 +56,7 @@ curl -X POST https://api.social-api.ai/v1/posts \
     "title": "Our spring collection walkthrough",
     "text": "A full tour of the new lineup. Chapters in the description below.",
     "visibility": "public",
-    "media_ids": ["f47ac10b-58cc-4372-a567-0e02b2c3d479"],
+    "media": [{ "source_type": "media_id", "source": "f47ac10b-58cc-4372-a567-0e02b2c3d479" }],
     "platform_data": {
       "youtube": {
         "category_id": "22",
@@ -123,7 +123,7 @@ YouTube schedules a publish natively: you upload the video as `private` with a `
   "title": "Launch day announcement",
   "text": "Going live for everyone at 10am.",
   "visibility": "private",
-  "media_ids": ["f47ac10b-58cc-4372-a567-0e02b2c3d479"],
+  "media": [{ "source_type": "media_id", "source": "f47ac10b-58cc-4372-a567-0e02b2c3d479" }],
   "platform_data": {
     "youtube": {
       "publish_at": "2026-04-15T10:00:00Z"
@@ -132,7 +132,7 @@ YouTube schedules a publish natively: you upload the video as `private` with a `
 }
 ```
 
-`publish_at` with any visibility other than `private` returns a validation error on the `publish_at` field. Leaving `visibility` unset is allowed because the connector defaults it to `private`.
+`publish_at` with any visibility other than `private` returns a validation error on the `publish_at` field. Leaving `visibility` unset is allowed: uploads normally default to `public`, but setting `publish_at` switches that default to `private` so the schedule is honored.
 
 ### First comment
 
@@ -146,7 +146,11 @@ Set `platform_data.youtube.playlist_id` to add the newly published video to one 
 
 ## 4. Update post
 
-YouTube supports editing a video's metadata after publish. `PATCH /v1/posts/:pid` updates the title, description, tags, category, privacy, and status flags.
+YouTube supports editing a video's metadata after publish, but which endpoint you use depends on whether the post has been published yet.
+
+### Before publish: `PATCH /v1/posts/:pid`
+
+`PATCH /v1/posts/:pid` edits the SocialAPI post record and only accepts posts in `draft`, `scheduled`, or `failed` state. It updates the title, description, tags, category, privacy, and status flags that will be applied at publish time.
 
 ```bash
 curl -X PATCH https://api.social-api.ai/v1/posts/p_01HZ9X3Q4R5M6N7P8V2K0W1J \
@@ -164,10 +168,37 @@ curl -X PATCH https://api.social-api.ai/v1/posts/p_01HZ9X3Q4R5M6N7P8V2K0W1J \
   }'
 ```
 
-Partial edits are safe: fields you do not provide are preserved. SocialAPI fetches the current video and backfills any unspecified snippet field, so an omitted field is never wiped.
+Calling this on an already-published post returns `409 post.state_invalid` with the message "Only draft, scheduled, or failed posts can be edited". Use the published-video endpoint below instead.
+
+### After publish: `PATCH /v1/platforms/youtube/accounts/{id}/videos/{videoId}`
+
+Once the video is live on YouTube, edit it through the dedicated video endpoint, keyed by the connected account ID and the YouTube video ID. This writes straight to the YouTube Data API and accepts the title, description, visibility, and Studio tags.
+
+```bash
+curl -X PATCH https://api.social-api.ai/v1/platforms/youtube/accounts/acc_01HZ9X3Q4R5M6N7P8V2K0W1J/videos/dQw4w9WgXcQ \
+  -H "Authorization: Bearer $SOCAPI_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Our spring collection walkthrough (updated)",
+    "description": "Updated description with corrected chapter timestamps.",
+    "tags": ["fashion", "spring", "lookbook", "2026"]
+  }'
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `title` | string | Video title. |
+| `description` | string | Video description. |
+| `visibility` | string | `public`, `unlisted`, or `private`. |
+| `tags` | string or array | YouTube Studio tags (`snippet.tags`). Accepts a JSON array or a comma-separated string, same as create-time `platform_data.youtube.tags`. |
+
+`tags` sets Studio Tags, which are a separate field from any `#hashtags` written into the description. Editing the description does not change Studio Tags, and setting tags does not change the description.
+
+Partial edits are safe on both endpoints: fields you do not provide are preserved. SocialAPI fetches the current video and backfills any unspecified snippet field, so an omitted field is never wiped.
 
 **Notes:**
 - Updating the snippet always requires a title and a category. SocialAPI backfills both from the current video when you omit them.
+- Omit `tags` to leave the video's existing tags unchanged. Sending an empty array is a no-op rather than a clear, since the current tags are backfilled. Clearing tags is not supported through the API.
 - `publish_at` can only be set before the first publish. It cannot be changed once the video is public.
 
 ---
@@ -312,7 +343,7 @@ curl -X POST https://api.social-api.ai/v1/posts \
     "title": "Spring collection walkthrough",
     "text": "A full tour of the new lineup. Chapters below.",
     "visibility": "private",
-    "media_ids": ["f47ac10b-58cc-4372-a567-0e02b2c3d479"],
+    "media": [{ "source_type": "media_id", "source": "f47ac10b-58cc-4372-a567-0e02b2c3d479" }],
     "first_comment": "Which piece is your favorite? Let us know below.",
     "platform_data": {
       "youtube": {

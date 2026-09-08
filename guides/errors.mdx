@@ -125,8 +125,33 @@ Both share the `resource.conflict` code. Note that `GET /v1/invites` and `GET /v
 | 429 | `billing.export_limit` | Daily export allowance is exhausted |
 | 429 | `billing.export_concurrent` | Too many exports running at once for this plan |
 | 429 | `billing.export_cooldown` | Cooldown active between exports |
+| 402 | `billing.past_due` | Subscription is past due after two failed payment attempts. See below |
 
 Limit responses include `error.meta.plan` and `error.meta.max` so clients can prompt the user to upgrade.
+
+### Past-due accounts
+
+When a subscription's payment fails twice (the initial charge plus one automatic
+retry), API access is paused. Every `/v1` endpoint returns `402` with code
+`billing.past_due` until the invoice is paid.
+
+Three things stay reachable so the account can be recovered:
+
+- `GET /v1/users/me` and `PATCH /v1/users/me`
+- every `/v1/billing/*` endpoint
+- inbound platform webhooks, which are unaffected
+
+`GET /v1/users/me` reports the state in two fields: `billing_blocked` (boolean)
+and `billing_blocked_at` (when the block began, or null).
+
+**Outbound webhooks are not delivered while an account is past due.** Events that
+occur during this window are dropped, not queued, and are not replayed after
+payment. Ingestion is unaffected, so the underlying data is still recorded and
+remains queryable through `GET /v1/events` once access is restored.
+
+Access is restored automatically within seconds of a successful payment. There is
+no endpoint to call and no support ticket to open: paying the invoice, whether
+through the dashboard's Stripe portal or an automatic retry, lifts the block.
 
 ## Platform errors
 
@@ -189,6 +214,35 @@ WhatsApp Cloud API has a richer error surface than other platforms because of it
 | HTTP | Code | When it occurs |
 |---|---|---|
 | 403 | `telegram.cannot_message` | The bot cannot message this chat. The user must start the bot first, or the bot was blocked or removed. There is no 24-hour window once started. |
+
+## Zalo
+
+Zalo uses the generic `platform.zalo.*` namespace (see the `platform.<name>.*` row above), not a dedicated top-level namespace.
+
+| HTTP | Code | When it occurs |
+|---|---|---|
+| 422 | `platform.zalo.not_deliverable` | Outside the customer service messaging window, or the recipient is not eligible |
+| 401 | `platform.zalo.auth` | Access token expired or revoked, or the Official Account is no longer authorized |
+| 202 | `platform.zalo.article_processing` | Article creation is still processing on Zalo after the verification poll budget is exhausted; the article may still publish, so check before retrying |
+| 429 | `platform.zalo.rate_limit` | Zalo per-app or per-OA quota exhausted |
+| 400 | `validation.platform_param` | Zalo rejected a parameter |
+| 404 | `resource.not_found` | The referenced Zalo object or account does not exist |
+| 502 | `platform.zalo.e<N>` | Zalo returned an error code SocialAPI does not map explicitly, `<N>` is the absolute value of Zalo's numeric code (Zalo `-105` becomes `platform.zalo.e105`) |
+| 502 | `platform.zalo.api_error` | Transport or malformed-response failure reaching Zalo, with no Zalo error envelope to read a code from |
+
+`platform.zalo.not_deliverable` is the one you're most likely to hit: Zalo only allows a customer service message within 7 days of the user's last interaction with your Official Account (free within 48 hours), and rejects sends outside that window with a 422 instead of queuing them.
+
+## Bluesky
+
+Bluesky uses the generic `platform.bluesky.*` namespace (see the `platform.<name>.*` row above), not a dedicated top-level namespace.
+
+| Status | Code | Meaning |
+|---|---|---|
+| 401 | `platform.bluesky.auth_factor_required` | The account has email two-factor authentication enabled. Bluesky emailed a confirmation code; retry the connect request with it as `metadata.auth_factor_token` |
+| 403 | `platform.bluesky.dm_scope_missing` | The app password was created without direct message access. DM access cannot be added to an existing app password: create a new one with the option enabled and reconnect. Posts, comments, and mentions keep working |
+| 429 | `platform.bluesky.rate_limit` | Bluesky quota exhausted. Sign-in is limited to 30 requests per 5 minutes per account |
+
+`platform.bluesky.dm_scope_missing` only affects the DM endpoints, so treat it as a per-capability failure rather than a dead connection.
 
 ## System
 

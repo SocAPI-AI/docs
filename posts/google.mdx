@@ -17,7 +17,7 @@ Google Business Profile (GBP) publishing uses the Google My Business API (v4) ag
 | Auth type | OAuth 2.0 (Google) |
 | API | Google My Business API v4 |
 | Create post | Yes (immediate publish via `createLocalPost`) |
-| Update post | Yes (PATCH with `updateMask`) |
+| Update post | Yes (PATCH with `updateMask`); text and other fields only, media cannot be changed |
 | Delete post | Yes |
 | Schedule | Yes (server-side; SocialAPI holds and publishes at the scheduled time) |
 | First comment | No |
@@ -29,14 +29,14 @@ Google Business Profile (GBP) publishing uses the Google My Business API (v4) ag
 
 | Content type | How to trigger | Notes |
 |---|---|---|
-| Text only | No `media_ids` | Publishes a plain text local post |
-| Single image | One image entry in `media_ids` | GBP supports one image per post; additional entries are ignored |
+| Text only | No `media` | Publishes a plain text local post |
+| Single image | One image entry in `media` | GBP supports one image per post; additional entries are ignored |
 
 **Video:** Not supported. The Google My Business API does not accept video uploads for local posts.
 
 **Caption limit:** GBP does not publish a documented character limit, but posts display best under 1,500 characters. Very long posts may be truncated in the knowledge panel display.
 
-**Carousels and multi-image posts:** Not supported. Only the first entry in `media_ids` is used.
+**Carousels and multi-image posts:** Not supported. Only the first entry in `media` is used.
 
 ---
 
@@ -108,7 +108,7 @@ curl -X POST https://api.social-api.ai/v1/posts \
   -d '{
     "targets": [{ "account_id": "acc_01HZ9X3Q4R5M6N7P8V2K0W1J" }],
     "text": "Our spring menu is now available.",
-    "media_ids": ["f47ac10b-58cc-4372-a567-0e02b2c3d479"],
+    "media": [{ "source_type": "media_id", "source": "f47ac10b-58cc-4372-a567-0e02b2c3d479" }],
     "platform_data": {
       "google": {
         "topicType": "STANDARD"
@@ -157,6 +157,10 @@ The `updateMask` field controls which fields are sent to the GBP PATCH endpoint.
   }
 }
 ```
+
+### Media cannot be updated
+
+An update that carries media is rejected with `validation.media_not_updatable`. Google does not document whether the local posts PATCH endpoint accepts a `media` update mask, so SocialAPI returns a clear error rather than accepting the request and silently discarding the media. To change a post's image, delete the post and create a new one.
 
 **Limitation:** `topicType` cannot be changed after a post is created. Attempting to include it in an update will result in a GBP API error.
 
@@ -378,6 +382,6 @@ SocialAPI's managed Google Cloud OAuth app requests the following scope on your 
 
 | Scope | Purpose |
 |---|---|
-| `https://www.googleapis.com/auth/business.manage` | Read and write access to all Google Business Profile locations, posts, reviews, and Q&A for the authenticated user |
+| `https://www.googleapis.com/auth/business.manage` | Read and write access to all Google Business Profile locations, posts, and reviews for the authenticated user |
 
 This single scope covers the GBP API operations we use: listing locations, creating and managing local posts, and reading and replying to reviews.

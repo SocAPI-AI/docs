@@ -3,7 +3,7 @@ title: Posts overview
 description: Compare post publishing capabilities across all supported platforms.
 ---
 
-The Posts API is a content publishing API: one endpoint to publish and schedule photos, videos, carousels, stories, and reels across Instagram, Facebook, TikTok, LinkedIn, YouTube, and Threads, with per-platform delivery status.
+The Posts API is a content publishing API: one endpoint to publish and schedule photos, videos, carousels, stories, and reels across Instagram, Facebook, TikTok, LinkedIn, YouTube, Threads, and Zalo, with per-platform delivery status.
 
 Publishing uses a single endpoint, `POST /v1/posts`, with per-platform behavior controlled by the `platform_data` field. This page compares capabilities across all platforms at a glance. For full details on a specific platform, see the deep-dive pages linked below.
 
@@ -11,21 +11,30 @@ Use `POST /v1/posts/validate` to check constraints before publishing, and `GET /
 
 ## Attaching media
 
-Photos and videos are upload-first. Upload a file to receive a `media_id`, then pass that ID in the `media_ids` array. A raw public URL in `media_ids` is ignored. See the [Media uploads guide](/guides/media) for the two upload paths, the verify step, and storage limits.
+Photos and videos are attached through the ordered `media` array. Each item sets a `source_type`: an uploaded library file (`media_id`), a public URL we fetch at publish time (`url`), or media you uploaded to the platform yourself (`platform_attachment_id`, supported on Instagram, Threads, LinkedIn, LinkedIn Page, and X/Twitter). The older flat `media_ids` array still works and is equivalent to a list of `media_id` sources. See the [Media uploads guide](/guides/media) for upload paths, URL rules, and storage limits.
 
 ## Capability matrix
 
 | Capability | Instagram | Facebook | LinkedIn | Threads | TikTok | YouTube | X / Twitter | Google |
 |---|---|---|---|---|---|---|---|---|
-| Create post | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Coming soon |
-| Update post | No | Yes (text only) | Yes (text only) | No | No | Yes | No | Coming soon |
-| Delete post | Yes | Yes | Yes | Yes | No | Yes | Yes | Coming soon |
-| Schedule | Yes | Yes | Yes | Yes | No | Native | No | Coming soon |
+| Create post | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes |
+| Update post | No | Yes (text only) | Yes (text only) | No | No | Yes | No | Yes (text only) |
+| Delete post | No | Yes | Yes | Yes | No | Yes | Yes | Yes |
+| Schedule | Yes | Yes | Yes | Yes | No | Native | No | Yes |
 | First comment | Yes (best-effort) | Yes (best-effort) | No | No | No | Yes (best-effort) | No | No |
-| Image | Yes | Yes | Yes | Yes | Yes (1-35) | Thumbnail | No | Coming soon |
+| Image | Yes | Yes | Yes | Yes | Yes (1-35) | Thumbnail | No | Yes (1) |
 | Video | Yes (as Reel) | Yes | Yes | Yes | Yes | Yes | No | No |
 | Carousel | Yes (2-10) | Yes (2-10) | Yes (2-20) | Yes (2-20) | Photo carousel only | No | No | No |
 | Max media per post | 10 | 10 | 20 | 20 | 35 (photo) / 1 (video) | 1 (video + thumb) | 0 (text only) | 1 |
+
+## Retrieving a post
+
+`GET /v1/posts/{pid}` and `GET /v1/posts/{pid}/metrics` accept either identifier:
+
+- The SocialAPI post ID (UUID) returned when the post was created.
+- A platform post ID: the platform's own ID for a published target, for example a TikTok video ID or a Facebook post ID.
+
+A platform post ID resolves to the SocialAPI post it was published from, so you can fetch a post or its live metrics using the ID you already track on the platform side. If a platform post ID happens to match more than one post across your accounts, the API returns `409` with code `ambiguous_post_id`; retry with the SocialAPI post ID. Mutating endpoints (update, delete, publish, retry, unpublish) accept only the SocialAPI post ID.
 
 ## Deleting posts
 
@@ -58,7 +67,7 @@ How each platform interprets the shared `PostDraft` fields:
 | Field | Instagram | Facebook | LinkedIn | Threads | TikTok | YouTube | X / Twitter | Google |
 |---|---|---|---|---|---|---|---|---|
 | `text` | Caption (max 2200 chars) | Post message | Commentary | Post text (max 500 chars) | Video description | Video description | Tweet text (max 280) | Summary |
-| `media_ids` | Presigned URLs; determines image/video/carousel | First URL only; photo or video | Presigned URLs; image or video | Presigned URLs | Presigned URLs; video or photo carousel | Single video URL | Not supported (text only) | Single image URL |
+| `media` | Determines image/video/carousel | First item only; photo or video | Image or video | Image or video | Video, or photo carousel | Single video | Up to 4 photos, or one video, or one GIF | Single image |
 | `first_comment` | Posted as a comment after publish (best-effort, non-blocking) | Posted as a comment after publish (best-effort, non-blocking) | Not supported | Not supported | Not supported | Posted as a comment after publish (best-effort, non-blocking) | Not supported | Not supported |
 | `scheduled_at` | Deferred publish | Deferred publish | Deferred publish | Deferred publish | Not supported | Not supported | Not supported | Not supported |
 
@@ -78,6 +87,7 @@ Pass these inside each target's `platform_data` object (per-target overrides sup
 | [YouTube](/posts/youtube) | None | `category_id`, `tags`, `made_for_kids`, `embeddable`, `notify_subscribers`, `publish_at` |
 | [X / Twitter](/connectors/twitter) | None | `reply_settings` (`following`, `mentionedUsers`, `subscribers`, `verified`) |
 | [Google](/posts/google) | None (defaults to STANDARD) | `topicType` (STANDARD, EVENT, OFFER, ALERT), `updateMask` |
+| [Zalo](/posts/zalo) | None | None (article title falls back to `text`) |
 
 ## Required OAuth scopes
 
@@ -90,7 +100,7 @@ Pass these inside each target's `platform_data` object (per-target overrides sup
 | TikTok | `user.info.basic`, `user.info.profile`, `video.publish`, `video.upload` |
 | YouTube | `https://www.googleapis.com/auth/youtube.force-ssl` |
 | X / Twitter | `tweet.read`, `tweet.write`, `tweet.moderate.write`, `users.read`, `dm.read`, `dm.write`, `like.write`, `offline.access` (BYOK; you configure your own app) |
-| Google | `https://www.googleapis.com/auth/business.manage` (Coming soon) |
+| Google | `https://www.googleapis.com/auth/business.manage` |
 
 ## Per-platform deep dives
 
@@ -117,6 +127,9 @@ Pass these inside each target's `platform_data` object (per-target overrides sup
     Tweets with text or images. X API v2.
   </Card>
   <Card title="Google" href="/posts/google">
-    Business Profile local posts. Coming soon.
+    Business Profile local posts. Google My Business API v4.
+  </Card>
+  <Card title="Zalo" href="/posts/zalo">
+    Official Account articles and videos. Zalo Official Account Open API.
   </Card>
 </CardGroup>

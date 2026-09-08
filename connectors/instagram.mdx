@@ -36,7 +36,7 @@ description: Connect and interact with Instagram accounts via the Meta Graph API
 | Reviews | No | Instagram has no review feature |
 | Mentions | Partial | `GET /mentions` returns only media your account was tagged in. @mentions written inside a caption or a comment are not returned, and do not currently fire `mention.received`. See [Mentions](/guides/inbox#mentions) |
 | Create post | Yes | Images, videos, reels, carousels |
-| Delete post | Yes | |
+| Delete post | No | Requires an account connected with Facebook Login, not yet available. Returns `501 resource.not_supported`. |
 
 ## Connecting
 
@@ -223,7 +223,7 @@ curl -X POST https://api.social-api.ai/v1/posts \
   -H "Content-Type: application/json" \
   -d '{
     "text": "Hello world #socapi",
-    "media_ids": ["f47ac10b-58cc-4372-a567-0e02b2c3d479"],
+    "media": [{ "source_type": "media_id", "source": "f47ac10b-58cc-4372-a567-0e02b2c3d479" }],
     "targets": [
       {
         "account_id": "acc_01HZ9X3Q4R5M6N7P8V2K0W1J",
