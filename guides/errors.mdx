@@ -143,6 +143,7 @@ When the upstream platform (Meta, TikTok, Google, etc.) rejects a call, the erro
 | 400 | `platform.instagram.private_reply_ineligible`, `platform.facebook.private_reply_ineligible` | The comment cannot receive a private reply: the 7-day window has expired, or the comment already received one |
 | 404 | `platform.facebook.no_pages`, `platform.linkedin.no_pages`, `platform.google.no_locations`, `platform.youtube.no_channels`, `platform.youtube.no_uploads_playlist` | The connected account exposes no usable target |
 | 403 | `platform.facebook.page_cap` | Brand already has the maximum of 5 Facebook Pages; this is a hard cap, not billed |
+| 403 | `platform.youtube.account_suspended` | YouTube has suspended or closed the account, or its channel. The stored token is still valid, so reconnecting does not restore access: the suspension has to be resolved with YouTube directly. SocialAPI stops background sync for the account and sets `reconnect_reason` to `youtube_account_suspended` |
 
 ## BYOK (bring-your-own-key)
 

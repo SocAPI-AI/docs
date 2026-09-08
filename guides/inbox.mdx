@@ -198,6 +198,8 @@ Read mentions of a connected account, and reply to them as a public comment.
 
 Mentions are scoped to a single connected account, not the workspace.
 
+What `GET /mentions` returns differs by platform, and on Instagram it is narrower than the name suggests. It returns media your account was tagged in, which is the only mention-like collection Meta exposes as a list. @mentions written inside a post caption or inside a comment are not included: Meta provides no endpoint to poll them on either Instagram connection flow, and they reach applications only as webhooks. Those webhooks are not currently delivered for Instagram either (see [`mention.received`](/guides/webhooks)), so an @mention of your account in a comment on someone else's post will not appear through this endpoint today.
+
 Replying works even when the mention is on someone else's post, where the normal
 comment-reply endpoint is not allowed. Pass `media_id` (the post the mention is
 on, or the `sapi_mnt_` id from the list response) and `text`. Set `comment_id`
@@ -208,7 +210,7 @@ post caption. A reply consumes 1 interaction credit.
 
 | Platform | List mentions | Reply to mention |
 |----------|----------|----------|
-| Instagram | Yes | Yes |
+| Instagram | Tagged media only | Yes |
 | Facebook | Yes | Yes |
 | X / Twitter | Yes | No |
 | All others | No | No |

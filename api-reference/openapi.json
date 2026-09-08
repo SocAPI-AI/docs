@@ -878,7 +878,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Fetches posts and stories where your brand account was mentioned or tagged. Results are sorted newest-first. Returns 501 for platforms that do not support mention tracking. Threads support is beta and requires the threads_manage_mentions permission, which is pending Meta App Review, so Threads accounts outside the app's tester roster return an upstream authorization error until it is granted.",
+                "description": "Fetches posts where your brand account was mentioned or tagged. Results are sorted newest-first. Returns 501 for platforms that do not support mention tracking. On Instagram this returns only media your account was tagged in: @mentions written inside a post caption or inside a comment are never included, because Meta exposes no endpoint to poll them, and they are not currently delivered as mention.received webhooks either. Threads support is beta and requires the threads_manage_mentions permission, which is pending Meta App Review, so Threads accounts outside the app's tester roster return an upstream authorization error until it is granted.",
                 "tags": [
                     "Mentions"
                 ],
