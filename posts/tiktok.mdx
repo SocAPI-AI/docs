@@ -99,7 +99,7 @@ curl -X POST https://api.social-api.ai/v1/posts \
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `privacy_level` | string | **Yes** | Audience setting. Must be one of the values returned by the creator info endpoint for this account. Common values: `PUBLIC_TO_EVERYONE`, `MUTUAL_FOLLOW_FRIENDS`, `FOLLOWER_OF_CREATOR`, `SELF_ONLY`. Required; omitting produces a validation error (field `privacy_level`). |
-| `media_type` | string | No | `"video"` (default) or `"photo"`. |
+| `media_type` | string | No | `"video"` (default) or `"photo"`. Case-insensitive, so TikTok's own spelling `"PHOTO"` is accepted too. A value that names neither post type is rejected with a `400` on the `media_type` field, by `POST /v1/posts/validate` as well as by `POST /v1/posts`, rather than being published as a video. |
 | `brand_content_toggle` | bool | No | Marks the post as branded or sponsored content. Cannot be combined with `SELF_ONLY` privacy. |
 | `brand_organic_toggle` | bool | No | Organic branded content disclosure flag. |
 | `_disclosure_on` | bool | No | SocialAPI-only disclosure gate. When `true`, at least one of `brand_content_toggle` or `brand_organic_toggle` must also be `true`; otherwise validation returns a `400` error on the `brand_content` field. |

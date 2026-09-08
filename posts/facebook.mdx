@@ -41,7 +41,7 @@ Route selection is mostly automatic, driven by how many `media_ids` you pass:
 - `media_ids` has one entry → photo or video endpoint based on the file extension
 - `media_ids` has 2 to 10 entries → multi-photo album
 
-Reels and Stories override that extension-based routing. Set `content_type` in the target's `platform_data` to `"reel"` (one vertical video) or `"stories"` (one photo or video), and that intent takes precedence over the rules above.
+Reels and Stories override that extension-based routing. Set `content_type` in the target's `platform_data` to `"reel"` (one vertical video) or `"stories"` (one photo or video), and that intent takes precedence over the rules above. The value is case-insensitive; any other value publishes a standard feed post and returns a warning naming it.
 
 **Caption limit:** Follows Facebook's standard post message limit (approximately 63,206 characters, though shorter posts perform better).
 

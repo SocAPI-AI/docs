@@ -2917,7 +2917,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Sends a direct message to the author of a comment. Only supported on Instagram and Facebook. Meta allows one private reply per comment, within 7 days of the comment; a second attempt or an expired window returns HTTP 400 with error code platform.instagram.private_reply_ineligible or platform.facebook.private_reply_ineligible. On Facebook the commenter's reply continues as a normal Messenger conversation; on Instagram the private reply does not open a standard 24-hour messaging window. Check the can_private_reply capability flag.",
+                "description": "Sends a direct message to the author of a comment. Only supported on Instagram and Facebook. Meta allows one private reply per comment, within 7 days of the comment; a second attempt or an expired window returns HTTP 400 with error code platform.instagram.private_reply_ineligible or platform.facebook.private_reply_ineligible. Once a comment has spent its one reply, or when we can already tell the comment is older than 7 days, further attempts are refused immediately without calling the platform and do not count against your outbound message rate; the error carries a reason of already_replied, platform_refused or window_expired. The 400 is terminal: retrying it will never succeed. On Facebook the commenter's reply continues as a normal Messenger conversation; on Instagram the private reply does not open a standard 24-hour messaging window. Check the can_private_reply capability flag.",
                 "tags": [
                     "Inbox Comments"
                 ],
@@ -5464,7 +5464,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Assigns one unassigned Page from this login to the given brand. Each Page belongs to exactly one brand. Each brand can connect up to 5 Facebook Pages, a hard cap. Assigning beyond that limit is refused.",
+                "description": "Assigns one Page from this login to the given brand. Each Page belongs to exactly one brand, so a Page currently held by another brand of yours is moved to the target brand. Each brand can connect up to 5 Facebook Pages, a hard cap. Assigning beyond that limit is refused.",
                 "tags": [
                     "Facebook"
                 ],
@@ -9596,7 +9596,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Fetches live engagement metrics from platform APIs for a published post. Accepts the SocialAPI post ID or a platform post ID.",
+                "description": "Fetches engagement metrics from platform APIs for a published post. Accepts the SocialAPI post ID or a platform post ID.",
                 "tags": [
                     "Posts"
                 ],
